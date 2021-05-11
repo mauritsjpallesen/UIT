@@ -1,0 +1,43 @@
+<uit>:
+    BoxLayout:
+        id: login_layout
+        orientation: 'vertical'
+        padding: [10,50,10,50]
+        spacing: 50
+
+        MDTextFieldRound:
+            hint_text: 'Name of file'
+            id: file
+            multiline: False
+            font_size: "16sp" #36
+            # mode: "rectangle"
+            icon_left: 'account'
+            halign: 'center'
+            normal_color: 0,0,0,0
+            color_active: .7, 0, 0, 0
+            # color_active: .5, .5, 1, .22
+            required: True
+            size_hint: .4, .2
+            pos_hint: {"center_x":.5}
+
+        MDFloatingActionButton:
+            # text: "Next"
+            # font_size: 32
+            icon: "record-rec"
+            user_font_size: "32sp"
+            md_bg_color: app.theme_cls.primary_color
+            text_color: 1, 1, 1, 1
+            # size_hint: .2, .2
+            pos_hint: {"center_x":.5}
+            on_press: root.record(file.text)
+
+        MDFloatingActionButton:
+            # text: "Next"
+            # font_size: 32
+            icon: "head-question-outline"
+            user_font_size: "32sp"
+            md_bg_color: app.theme_cls.primary_color
+            text_color: 1, 1, 1, 1
+            # size_hint: .2, .2
+            pos_hint: {"center_x":.5}
+            on_press: root.predict()
