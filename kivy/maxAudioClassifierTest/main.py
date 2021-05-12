@@ -24,11 +24,11 @@ class Uit(Screen):
 
     def record(self, filename):
         if self.counter % 2 == 0:
-            mic = get_input(callback=save_recording)
-            mic.start()
+            self.mic = get_input(callback=save_recording)
+            self.mic.start()
             self.counter += 1
         else:
-            self.rec.record = False
+            self.mic.stop()
 
 
     def save_recording(self, data):
