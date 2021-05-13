@@ -6,7 +6,6 @@ from kivy.uix.label import Label
 from kivy.network.urlrequest import UrlRequest
 from kivy.uix.screenmanager import ScreenManager, Screen, SlideTransition
 from kivy.lang import Builder
-from audiostream import get_input
 
 from requests_toolbelt import MultipartEncoder
 
