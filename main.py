@@ -29,17 +29,17 @@ class Uit(Screen):
 
     def record(self, filename):
         print("we innit")
-        sd.default.device = 'default'
         fs = 44100
         if self.counter % 2 == 0:
             seconds = 10
 
             self.recording = sd.rec(int(seconds * fs), samplerate=fs, channels=2)
             self.counter += 1
-            # sd.wait()
         else:
             sd.stop()
-            write(filename + '.wav', fs, self.recording)
+            filePath = './audio/' + filename + '.wav'
+            write(filePath, fs, self.recording)
+            self.predict(filePath, 0.75)
             print("success")
 
 
