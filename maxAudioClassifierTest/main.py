@@ -39,7 +39,7 @@ class Uit(Screen):
             # sd.wait()
         else:
             sd.stop()
-            write(filename + '.wav', fs, self.recording)
+            write('./audios/' + filename + '.wav', fs, self.recording)
             print("success")
 
 
