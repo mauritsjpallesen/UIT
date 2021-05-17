@@ -1,13 +1,18 @@
 import kivy
 kivy.require('1.8.0')
 
+import numpy as np
+
 from kivymd.app import MDApp
 from kivy.uix.label import Label
 from kivy.network.urlrequest import UrlRequest
 from kivy.uix.screenmanager import ScreenManager, Screen, SlideTransition
 from kivy.lang import Builder
 
-from requests_toolbelt import MultipartEncoder
+from pitchDetection import getPrediction, getAverageFrequncy
+
+import sounddevice as sd
+from scipy.io.wavfile import write
 
 Builder.load_file('uit.kv')
 
@@ -19,55 +24,33 @@ class Uit(Screen):
     def __init__(self, **kwargs):
         super(Uit, self).__init__(**kwargs)
         self.counter = 0
+        self.recording = None
         self.modelEndpoint = "https://max-audio-classifier.codait-prod-41208c73af8fca213512856c7a09db52-0000.us-east.containers.appdomain.cloud/model/predict"
 
     def record(self, filename):
+        print("we innit")
+        sd.default.device = 'default'
+        fs = 44100
         if self.counter % 2 == 0:
-            self.mic = get_input(callback=save_recording)
-            self.mic.start()
+            seconds = 10
+
+            self.recording = sd.rec(int(seconds * fs), samplerate=fs, channels=2)
             self.counter += 1
+            # sd.wait()
         else:
-            self.mic.stop()
+            sd.stop()
+            write(filename + '.wav', fs, self.recording)
+            print("success")
+
 
 
     def save_recording(self, data):
         print('i got', len(data))
 
-    def predictSuccess(self, *args):
-        print(args)
-        print("success")
-
-    def predictFailure(self, *args):
-        print(args)
-        print("failure")
-
-    def predictError(self, *args):
-        print(args)
-        print("error")
-
-    def predict(self, audioFile="/home/maurits/Git/UIT/kivy/maxAudioClassifierTest/audios/mugTap.wav"):
-        files = {"file": open(audioFile, "rb")}
-
-        with open(audioFile, "rb") as fobj:
-            payload = MultipartEncoder(
-                        fields={
-                            "audio": (
-                                "audio.wav",
-                                fobj,
-                                "audio/wav"
-                            )
-                        }
-                    )
-
-            headers = {'Accept': 'application/json'}
-            req = UrlRequest(
-                self.modelEndpoint,
-                on_success = self.predictSuccess,
-                on_failure = self.predictFailure,
-                on_error = self.predictError,
-                req_headers = headers,
-                req_body=payload
-            )
+    def predict(self, audioFile, confidenceThreshold):
+        prediction = getPrediction(audioFile)
+        avgFreq = getAverageFrequncy(prediction, confidenceThreshold)
+        print(avgFreq)
 
 
 class MyApp(MDApp):
