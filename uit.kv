@@ -11,14 +11,24 @@
             multiline: False
             font_size: "16sp" #36
             # mode: "rectangle"
-            icon_left: 'account'
+            icon_left: 'file-plus'
             halign: 'center'
             normal_color: 0,0,0,0
-            color_active: .7, 0, 0, 0
             # color_active: .5, .5, 1, .22
             required: True
-            size_hint: .4, .2
+            #size_hint: .4, .2
             pos_hint: {"center_x":.5}
+
+        MDFloatingActionButton:
+            # text: "Next"
+            # font_size: 32
+            icon: "folder-open"
+            user_font_size: "32sp"
+            md_bg_color: app.theme_cls.primary_color
+            text_color: 1, 1, 1, 1
+            # size_hint: .2, .2
+            pos_hint: {"center_x":.5}
+            on_press: app.file_manager_open()
 
         MDFloatingActionButton:
             # text: "Next"
@@ -41,3 +51,13 @@
             # size_hint: .2, .2
             pos_hint: {"center_x":.5}
             on_press: root.predict()
+
+        MDSlider:
+            id: slider
+            min: 0
+            max: 100
+            value: 50
+            step: 5
+            hint: True
+            color: app.theme_cls.accent_color
+            on_touch_up: root.set_slider(slider.value)
