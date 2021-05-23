@@ -101,8 +101,6 @@ class Uit(Screen):
             dialog = MDDialog(title='Result', text=str(label))
             dialog.open()
 
-
-
 class MyApp(MDApp):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)

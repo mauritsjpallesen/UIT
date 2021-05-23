@@ -17,6 +17,7 @@ def extractFeaturesFromFile(audioFile, threshold, seconds):
     cropped = crop.crop_seconds_from_threshold(data, sampleRate, threshold, seconds)
     if (len(cropped) == 0):
         return None
+
     zero_crossings = librosa.zero_crossings(cropped, pad=False)
     spectral_centroid = librosa.feature.spectral_centroid(cropped, sr=sampleRate)[0]
     spectral_rolloff = librosa.feature.spectral_rolloff(cropped, sr=sampleRate)[0]
@@ -73,6 +74,7 @@ def getTrainAndTestData(testSize):
     genre_list = data.iloc[:, -1]
     encoder = LabelEncoder()
     y = encoder.fit_transform(genre_list)
+
     scaler = getScaler()
     X = scaler.fit_transform(np.array(data.iloc[:, :-1], dtype = float))
     X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=testSize)
@@ -94,7 +96,6 @@ if __name__ == '__main__':
     X_train, X_test, y_train, y_test, encoder = getTrainAndTestData(0.1)
     clf = getTrainedSvmModel(X_train, y_train)
     y_pred = clf.predict(X_test)
-    print(X_test[0])
     print(y_pred)
     print(y_test)
     # if (len(sys.argv) != 3):

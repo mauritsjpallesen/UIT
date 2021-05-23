@@ -127,3 +127,12 @@ dmypy.json
 
 # Pyre type checker
 .pyre/
+
+# Mac
+.icloud
+
+# Pipenv
+Pipfile
+
+# misc
+figures
