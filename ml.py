@@ -15,6 +15,9 @@ from sklearn import svm
 def extractFeaturesFromFile(audioFile, threshold, seconds):
     data, sampleRate = librosa.load(audioFile, sr=44100)
     cropped = crop.crop_seconds_from_threshold(data, sampleRate, threshold, seconds)
+    if (len(cropped) == 0):
+        return None
+
     zero_crossings = librosa.zero_crossings(cropped, pad=False)
     spectral_centroid = librosa.feature.spectral_centroid(cropped, sr=sampleRate)[0]
     spectral_rolloff = librosa.feature.spectral_rolloff(cropped, sr=sampleRate)[0]
@@ -22,7 +25,11 @@ def extractFeaturesFromFile(audioFile, threshold, seconds):
 
     mfccsMeans = [np.mean(x) for x in mfccs]
 
-    return np.mean(zero_crossings), np.mean(spectral_centroid), np.mean(spectral_rolloff), mfccsMeans
+    features = [np.mean(zero_crossings), np.mean(spectral_centroid), np.mean(spectral_rolloff)]
+    for m in mfccsMeans:
+        features.append(m)
+
+    return features
 
 def createDataSet(threshold, seconds):
     file = open('data.csv', 'w', newline='')
@@ -43,11 +50,13 @@ def createDataSet(threshold, seconds):
         directory = f'./audio/{s}/'
         for filename in os.listdir(directory):
             filePath = directory + filename
-            zero_crossings, spectral_centroid, spectral_rolloff, mfccsMeans = extractFeaturesFromFile(filePath, threshold, seconds)
+            # zero_crossings, spectral_centroid, spectral_rolloff, mfccsMeans = extractFeaturesFromFile(filePath, threshold, seconds)
+            features = extractFeaturesFromFile(filePath, threshold, seconds)
 
-            to_append = f'{filename} {zero_crossings} {spectral_centroid} {spectral_rolloff}'
-            for e in mfccsMeans:
-                to_append += f' {e}'
+            # to_append = f'{filename} {zero_crossings} {spectral_centroid} {spectral_rolloff}'
+            to_append = f'{filename}'
+            for f in features:
+                to_append += f' {f}'
 
             to_append += f' {s}'
 
@@ -56,16 +65,20 @@ def createDataSet(threshold, seconds):
                 writer = csv.writer(file)
                 writer.writerow(to_append.split())
 
+def getScaler():
+    return StandardScaler()
+
 def getTrainAndTestData(testSize):
     data = pd.read_csv('data.csv')
     data = data.drop(['filename'],axis=1)
     genre_list = data.iloc[:, -1]
     encoder = LabelEncoder()
     y = encoder.fit_transform(genre_list)
-    scaler = StandardScaler()
+
+    scaler = getScaler()
     X = scaler.fit_transform(np.array(data.iloc[:, :-1], dtype = float))
     X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=testSize)
-    return X_train, X_test, y_train, y_test
+    return X_train, X_test, y_train, y_test, encoder
 
 def getTrainedSvmModel(X_train, y_train):
     #Create a svm Classifier
@@ -80,7 +93,7 @@ def getTrainedSvmModel(X_train, y_train):
 if __name__ == '__main__':
 
     # createDataSet(0.4, 0.25)
-    X_train, X_test, y_train, y_test = getTrainAndTestData(0.4)
+    X_train, X_test, y_train, y_test, encoder = getTrainAndTestData(0.1)
     clf = getTrainedSvmModel(X_train, y_train)
     y_pred = clf.predict(X_test)
     print(y_pred)
