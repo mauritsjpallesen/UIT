@@ -49,23 +49,38 @@ def crop_sound(data, threshold, n):
 
 	return start_idx, end_idx, data[start_idx:end_idx]
 
-def plot_all_audios_in_folder(folderPath, threshold, n):
+def crop_seconds_from_threshold(data, rate, threshold, seconds):
+    start_index = -1
+    for i in range(len(data)):
+        if (abs(data[i]) > threshold):
+            start_index = i
+            break
+
+    end_index = start_index + rate * seconds
+    if (end_index >= len(data)):
+        end_index = len(data) - 1
+
+    return data[start_index:int(end_index)]
+
+def plot_all_audios_in_folder(folderPath, threshold, seconds):
     files = os.listdir(folderPath)
     plt.figure()
     for i in range(len(files)):
         rate, data = wavfile.read(folderPath + files[i])
         avg_data = data.sum(axis=1) // 2 if wavDataIsStereo(data) else data
 
-        N = avg_data.shape[0]
+        cropped = crop_seconds_from_threshold(avg_data, rate, threshold, seconds)
+
+        N = cropped.shape[0]
         s = N / rate
         t_step = 1.0 / rate
 
         t = np.arange(0, s, t_step)
 
-        if (t.shape != avg_data.shape):
+        if (t.shape != cropped.shape):
             continue
 
-        plt.plot(t, avg_data)
+        plt.plot(t, cropped)
 
     plt.show()
 
@@ -73,7 +88,7 @@ def wavDataIsStereo(data):
     return data.ndim == 2
 
 if __name__ == '__main__':
-    if (len(sys.argv) != 4):
+    if (len(sys.argv) < 3):
         print("Usage: cropt.py <FILE> <THRESHOLD> <N>")
         print("   or: cropt.py <DIRECTORY> <THRESHOLD> <N>")
         sys.exit()
@@ -81,6 +96,6 @@ if __name__ == '__main__':
     if (os.path.isfile(sys.argv[1])):
         show_crop(sys.argv[1], int(sys.argv[2]), int(sys.argv[3]))
     elif (os.path.isdir(sys.argv[1])):
-        plot_all_audios_in_folder(sys.argv[1], int(sys.argv[2]), int(sys.argv[3]))
+        plot_all_audios_in_folder(sys.argv[1], int(sys.argv[2]), float(sys.argv[3]))
     else:
         print(sys.argv[1] + " must be a file or a directory")
