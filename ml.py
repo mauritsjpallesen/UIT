@@ -45,7 +45,8 @@ def createDataSet(threshold, seconds):
         writer = csv.writer(file)
         writer.writerow(header)
 
-    surfaces = 'smallBox bigBox metal mousePad woodenTable'.split()
+    # surfaces = 'smallBox bigBox metal mousePad woodenTable'.split()
+    surfaces = 'smallBox bigBox mousePad woodenTable'.split()
     for s in surfaces:
         directory = f'./audio/{s}/'
         for filename in os.listdir(directory):
@@ -65,9 +66,6 @@ def createDataSet(threshold, seconds):
                 writer = csv.writer(file)
                 writer.writerow(to_append.split())
 
-def getScaler():
-    return StandardScaler()
-
 def getTrainAndTestData(testSize):
     data = pd.read_csv('data.csv')
     data = data.drop(['filename'],axis=1)
@@ -75,10 +73,10 @@ def getTrainAndTestData(testSize):
     encoder = LabelEncoder()
     y = encoder.fit_transform(genre_list)
 
-    scaler = getScaler()
+    scaler = StandardScaler()
     X = scaler.fit_transform(np.array(data.iloc[:, :-1], dtype = float))
     X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=testSize)
-    return X_train, X_test, y_train, y_test, encoder
+    return X_train, X_test, y_train, y_test, encoder, scaler
 
 def getTrainedSvmModel(X_train, y_train):
     #Create a svm Classifier
@@ -92,15 +90,22 @@ def getTrainedSvmModel(X_train, y_train):
 
 if __name__ == '__main__':
 
-    # createDataSet(0.4, 0.25)
-    X_train, X_test, y_train, y_test, encoder = getTrainAndTestData(0.1)
+    if ('-c' in sys.argv):
+        if (len(sys.argv) != 4):
+            print("Usage: ml.py -c <THRESHOLD> <SECONDS>")
+            sys.exit()
+        # current values:
+        #    threshold : 0.4
+        #    seconds   : 0.25
+        createDataSet(float(sys.argv[2]), float(sys.argv[3]))
+        sys.exit()
+
+    X_train, X_test, y_train, y_test, encoder = getTrainAndTestData(0.2)
     clf = getTrainedSvmModel(X_train, y_train)
     y_pred = clf.predict(X_test)
     print(y_pred)
     print(y_test)
-    # if (len(sys.argv) != 3):
-    #     print("Usage: ml.py <FOLDER1> <FOLDER2>")
-    #     sys.exit()
+    sys.exit()
 
 
 

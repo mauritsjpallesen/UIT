@@ -32,10 +32,11 @@ class Uit(Screen):
     def __init__(self, **kwargs):
         super(Uit, self).__init__(**kwargs)
 
-        X_train, X_test, y_train, y_test, encoder = ml.getTrainAndTestData(0.1)
+        X_train, X_test, y_train, y_test, encoder, scaler = ml.getTrainAndTestData(0.1)
         clf = ml.getTrainedSvmModel(X_train, y_train)
         self.svm = clf
         self.svmEncoder = encoder
+        self.svmScaler = scaler
 
         self.spinner = MDSpinner(
             size_hint=(None, None),
@@ -95,10 +96,10 @@ class Uit(Screen):
                 MDDialog(title='Unable to find sound').open()
                 return
 
-            print(features)
-            prediction = self.svm.predict([features])[0]
-            label = self.svmEncoder.inverse_transform([prediction])
-            dialog = MDDialog(title='Result', text=str(label))
+            normalizedFeatures = self.svmScaler.transform(np.array(features, dtype = float).reshape(1, -1))
+            prediction = self.svm.predict(normalizedFeatures)
+            label = self.svmEncoder.inverse_transform(prediction)[0]
+            dialog = MDDialog(title='Result', text=label)
             dialog.open()
 
 class MyApp(MDApp):
