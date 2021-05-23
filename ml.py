@@ -45,8 +45,7 @@ def createDataSet(threshold, seconds):
         writer = csv.writer(file)
         writer.writerow(header)
 
-    # surfaces = 'smallBox bigBox metal mousePad woodenTable'.split()
-    surfaces = 'smallBox bigBox mousePad woodenTable'.split()
+    surfaces = 'smallBox bigBox metal mousePad woodenTable'.split()
     for s in surfaces:
         directory = f'./audio/{s}/'
         for filename in os.listdir(directory):
