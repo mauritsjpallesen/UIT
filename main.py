@@ -32,7 +32,7 @@ class Uit(Screen):
     def __init__(self, **kwargs):
         super(Uit, self).__init__(**kwargs)
 
-        X_train, X_test, y_train, y_test, encoder, scaler = ml.getTrainAndTestData(0.1)
+        X_train, X_test, y_train, y_test, encoder, scaler = ml.getTrainAndTestData(0.01)
         clf = ml.getTrainedSvmModel(X_train, y_train)
         self.svm = clf
         self.svmEncoder = encoder
@@ -71,7 +71,7 @@ class Uit(Screen):
         self.filePath = path
 
     def files(self):
-        path = '/audio'  # path to the directory that will be opened in the file manager
+        path = './audio'  # path to the directory that will be opened in the file manager
         file_manager = MDFileManager(
             exit_manager=self.exit_manager,  # function called when the user reaches directory tree root
             select_path=self.select_path,  # function called when selecting a file/directory
