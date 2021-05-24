@@ -99,11 +99,17 @@ if __name__ == '__main__':
         createDataSet(float(sys.argv[2]), float(sys.argv[3]))
         sys.exit()
 
-    X_train, X_test, y_train, y_test, encoder = getTrainAndTestData(0.2)
+    X_train, X_test, y_train, y_test, encoder, scaler = getTrainAndTestData(0.2)
     clf = getTrainedSvmModel(X_train, y_train)
     y_pred = clf.predict(X_test)
+    results = []
+    for i in range(len(y_pred)):
+        actual = y_pred[i]
+        expected = y_test[i]
+        results.append(actual == expected)
     print(y_pred)
     print(y_test)
+    print(float(sum(results))/float(len(y_test)))
     sys.exit()
 
 
