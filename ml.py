@@ -21,11 +21,14 @@ def extractFeaturesFromFile(audioFile, threshold, seconds):
     zero_crossings = librosa.zero_crossings(cropped, pad=False)
     spectral_centroid = librosa.feature.spectral_centroid(cropped, sr=sampleRate)[0]
     spectral_rolloff = librosa.feature.spectral_rolloff(cropped, sr=sampleRate)[0]
+    spectral_bandwidth = librosa.feature.spectral_bandwidth(cropped, sr=sampleRate)[0]
+    rms = librosa.feature.rms(cropped)
+    chroma_stft = librosa.feature.chroma_stft(cropped, sr=sampleRate)
     mfccs = librosa.feature.mfcc(cropped, sr=sampleRate)
 
     mfccsMeans = [np.mean(x) for x in mfccs]
 
-    features = [np.mean(zero_crossings), np.mean(spectral_centroid), np.mean(spectral_rolloff)]
+    features = [np.mean(zero_crossings), np.mean(spectral_centroid), np.mean(spectral_rolloff), np.mean(spectral_bandwidth), np.mean(chroma_stft), np.mean(rms)]
     for m in mfccsMeans:
         features.append(m)
 
@@ -34,7 +37,7 @@ def extractFeaturesFromFile(audioFile, threshold, seconds):
 def createDataSet(threshold, seconds):
     file = open('data.csv', 'w', newline='')
 
-    header = 'filename zero_crossing_rate spectral_centroid spectral_rolloff'
+    header = 'filename zero_crossing_rate spectral_centroid spectral_rolloff spectral_bandwidth chroma_stft rms'
     for i in range(1, 21):
         header += f' mfcc{i}'
 
