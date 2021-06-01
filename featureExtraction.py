@@ -12,7 +12,7 @@ import os
 import pandas as pd
 from sklearn import svm
 
-def extractFeaturesFromFile(audioFile, threshold, seconds):
+def extractFeaturesFromFile(audioFile, seconds):
     data, sampleRate = librosa.load(audioFile, sr=44100)
     cropped = crop.crop_seconds_from_peak(data, sampleRate, seconds)
     if (len(cropped) == 0):

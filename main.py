@@ -21,7 +21,7 @@ from kivymd.uix.spinner import MDSpinner
 
 from featureExtraction import extractFeaturesFromFile
 
-from ml import getTrainAndTestData, getTrainedModel
+from ml import getTrainAndTestData, getTrainedModel, predict
 # from deepLearning import getTrainAndTestData, getTrainedModel
 
 from pitchDetection import getAverageFrequency
@@ -95,18 +95,12 @@ class Uit(Screen):
               text='Please record first')
             dialog.open()
         else:
-            features = extractFeaturesFromFile(self.filePath, 0.4, 0.25)
-            if (features == None):
+            predictionLabel = predict(self.model, self.modelScaler, self.modelEncoder, self.filePath)
+            if (predictionLabel == None):
                 MDDialog(title='Unable to find sound').open()
                 return
 
-            normalizedFeatures = self.modelScaler.transform(np.array(features, dtype = float).reshape(1, -1))
-            predictions = self.model.predict(normalizedFeatures)
-            # Get label from SVM model
-            label = self.modelEncoder.inverse_transform(predictions)[0]
-            # Get label from deep learning model
-            # label = self.modelEncoder.inverse_transform(np.argmax(predictions, axis=1))[0]
-            dialog = MDDialog(title='Result', text=label)
+            dialog = MDDialog(title='Result', text=predictionLabel)
             dialog.open()
 
 class MyApp(MDApp):
