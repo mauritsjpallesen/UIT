@@ -18,7 +18,11 @@ from kivymd.uix.slider import MDSlider
 from kivymd.uix.filemanager import MDFileManager
 from kivy.core.window import Window
 from kivymd.uix.spinner import MDSpinner
-import ml
+
+from featureExtraction import extractFeaturesFromFile
+
+from ml import getTrainAndTestData, getTrainedModel
+# from deepLearning import getTrainAndTestData, getTrainedModel
 
 from pitchDetection import getAverageFrequency
 
@@ -32,11 +36,11 @@ class Uit(Screen):
     def __init__(self, **kwargs):
         super(Uit, self).__init__(**kwargs)
 
-        X_train, X_test, y_train, y_test, encoder, scaler = ml.getTrainAndTestData(0.01)
-        clf = ml.getTrainedSvmModel(X_train, y_train)
-        self.svm = clf
-        self.svmEncoder = encoder
-        self.svmScaler = scaler
+        X_train, X_test, y_train, y_test, encoder, scaler = getTrainAndTestData(0.01)
+        model = getTrainedModel(X_train, y_train)
+        self.model = model
+        self.modelEncoder = encoder
+        self.modelScaler = scaler
 
         self.spinner = MDSpinner(
             size_hint=(None, None),
@@ -91,14 +95,17 @@ class Uit(Screen):
               text='Please record first')
             dialog.open()
         else:
-            features = ml.extractFeaturesFromFile(self.filePath, 0.4, 0.25)
+            features = extractFeaturesFromFile(self.filePath, 0.4, 0.25)
             if (features == None):
                 MDDialog(title='Unable to find sound').open()
                 return
 
-            normalizedFeatures = self.svmScaler.transform(np.array(features, dtype = float).reshape(1, -1))
-            prediction = self.svm.predict(normalizedFeatures)
-            label = self.svmEncoder.inverse_transform(prediction)[0]
+            normalizedFeatures = self.modelScaler.transform(np.array(features, dtype = float).reshape(1, -1))
+            predictions = self.model.predict(normalizedFeatures)
+            # Get label from SVM model
+            label = self.modelEncoder.inverse_transform(predictions)[0]
+            # Get label from deep learning model
+            # label = self.modelEncoder.inverse_transform(np.argmax(predictions, axis=1))[0]
             dialog = MDDialog(title='Result', text=label)
             dialog.open()
 

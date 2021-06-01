@@ -64,12 +64,25 @@ def crop_seconds_from_threshold(data, rate, threshold, seconds):
 
     return data[start_index:int(end_index)]
 
+def crop_seconds_from_peak(data, rate, seconds):
+    peak_index = data.tolist().index(max(data, key=abs))
+    start_index = peak_index - rate * 0.025
+    if (start_index < 0):
+        start_index = 0
+
+    end_index = peak_index + rate * seconds
+    if (end_index >= len(data)):
+        end_index = len(data) - 1
+
+    return data[int(start_index):int(end_index)]
+
 def plot_all_audios_in_folder(folderPath, threshold, seconds):
     files = os.listdir(folderPath)
     plt.figure()
     for i in range(len(files)):
         data, rate = librosa.load(folderPath + files[i], sr=44100)
-        cropped = crop_seconds_from_threshold(data, rate, threshold, seconds)
+        # cropped = crop_seconds_from_threshold(data, rate, threshold, seconds)
+        cropped = crop_seconds_from_peak(data, rate, seconds)
 
         librosa.display.waveplot(cropped, sr=rate, alpha=0.25)
 
