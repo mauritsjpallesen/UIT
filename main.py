@@ -18,7 +18,11 @@ from kivymd.uix.slider import MDSlider
 from kivymd.uix.filemanager import MDFileManager
 from kivy.core.window import Window
 from kivymd.uix.spinner import MDSpinner
-import ml
+
+from featureExtraction import extractFeaturesFromFile
+
+from ml import getTrainAndTestData, getTrainedModel, predict
+# from deepLearning import getTrainAndTestData, getTrainedModel
 
 from pitchDetection import getAverageFrequency
 
@@ -32,10 +36,11 @@ class Uit(Screen):
     def __init__(self, **kwargs):
         super(Uit, self).__init__(**kwargs)
 
-        X_train, X_test, y_train, y_test, encoder = ml.getTrainAndTestData(0.1)
-        clf = ml.getTrainedSvmModel(X_train, y_train)
-        self.svm = clf
-        self.svmEncoder = encoder
+        X_train, X_test, y_train, y_test, encoder, scaler = getTrainAndTestData(0.01)
+        model = getTrainedModel(X_train, y_train)
+        self.model = model
+        self.modelEncoder = encoder
+        self.modelScaler = scaler
 
         self.spinner = MDSpinner(
             size_hint=(None, None),
@@ -70,7 +75,7 @@ class Uit(Screen):
         self.filePath = path
 
     def files(self):
-        path = '/audio'  # path to the directory that will be opened in the file manager
+        path = './audio'  # path to the directory that will be opened in the file manager
         file_manager = MDFileManager(
             exit_manager=self.exit_manager,  # function called when the user reaches directory tree root
             select_path=self.select_path,  # function called when selecting a file/directory
@@ -90,15 +95,12 @@ class Uit(Screen):
               text='Please record first')
             dialog.open()
         else:
-            features = ml.extractFeaturesFromFile(self.filePath, 0.4, 0.25)
-            if (features == None):
+            predictionLabel = predict(self.model, self.modelScaler, self.modelEncoder, self.filePath)
+            if (predictionLabel == None):
                 MDDialog(title='Unable to find sound').open()
                 return
 
-            print(features)
-            prediction = self.svm.predict([features])[0]
-            label = self.svmEncoder.inverse_transform([prediction])
-            dialog = MDDialog(title='Result', text=str(label))
+            dialog = MDDialog(title='Result', text=predictionLabel)
             dialog.open()
 
 class MyApp(MDApp):

@@ -11,62 +11,8 @@ import csv
 import os
 import pandas as pd
 from sklearn import svm
-
-def extractFeaturesFromFile(audioFile, threshold, seconds):
-    data, sampleRate = librosa.load(audioFile, sr=44100)
-    cropped = crop.crop_seconds_from_threshold(data, sampleRate, threshold, seconds)
-    if (len(cropped) == 0):
-        return None
-
-    zero_crossings = librosa.zero_crossings(cropped, pad=False)
-    spectral_centroid = librosa.feature.spectral_centroid(cropped, sr=sampleRate)[0]
-    spectral_rolloff = librosa.feature.spectral_rolloff(cropped, sr=sampleRate)[0]
-    mfccs = librosa.feature.mfcc(cropped, sr=sampleRate)
-
-    mfccsMeans = [np.mean(x) for x in mfccs]
-
-    features = [np.mean(zero_crossings), np.mean(spectral_centroid), np.mean(spectral_rolloff)]
-    for m in mfccsMeans:
-        features.append(m)
-
-    return features
-
-def createDataSet(threshold, seconds):
-    file = open('data.csv', 'w', newline='')
-
-    header = 'filename zero_crossing_rate spectral_centroid spectral_rolloff'
-    for i in range(1, 21):
-        header += f' mfcc{i}'
-
-    header += ' label'
-    header = header.split(' ')
-
-    with file:
-        writer = csv.writer(file)
-        writer.writerow(header)
-
-    surfaces = 'smallBox bigBox metal mousePad woodenTable'.split()
-    for s in surfaces:
-        directory = f'./audio/{s}/'
-        for filename in os.listdir(directory):
-            filePath = directory + filename
-            # zero_crossings, spectral_centroid, spectral_rolloff, mfccsMeans = extractFeaturesFromFile(filePath, threshold, seconds)
-            features = extractFeaturesFromFile(filePath, threshold, seconds)
-
-            # to_append = f'{filename} {zero_crossings} {spectral_centroid} {spectral_rolloff}'
-            to_append = f'{filename}'
-            for f in features:
-                to_append += f' {f}'
-
-            to_append += f' {s}'
-
-            file = open('data.csv', 'a', newline='')
-            with file:
-                writer = csv.writer(file)
-                writer.writerow(to_append.split())
-
-def getScaler():
-    return StandardScaler()
+from featureExtraction import extractFeaturesFromFile
+from datasetCreation import createDataSet
 
 def getTrainAndTestData(testSize):
     data = pd.read_csv('data.csv')
@@ -75,54 +21,51 @@ def getTrainAndTestData(testSize):
     encoder = LabelEncoder()
     y = encoder.fit_transform(genre_list)
 
-    scaler = getScaler()
+    scaler = StandardScaler()
     X = scaler.fit_transform(np.array(data.iloc[:, :-1], dtype = float))
     X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=testSize)
-    return X_train, X_test, y_train, y_test, encoder
+    return X_train, X_test, y_train, y_test, encoder, scaler
 
-def getTrainedSvmModel(X_train, y_train):
-    #Create a svm Classifier
-    clf = svm.SVC(kernel='linear') # Linear Kernel
-
-    #Train the model using the training sets
+def getTrainedModel(X_train, y_train):
+    clf = svm.SVC(kernel='linear', probability=True)
     clf.fit(X_train, y_train)
-
     return clf
 
+def predict(model, modelScaler, modelEncoder, filePath):
+    features = extractFeaturesFromFile(filePath, 0.25)
+    if (features == None):
+        return None
+
+    normalizedFeatures = modelScaler.transform(np.array(features, dtype = float).reshape(1, -1))
+    prediction = model.predict_proba(normalizedFeatures)[0]
+    encodedLabel = np.argmax(prediction)
+    predictionProbability = prediction[encodedLabel]
+    print('Prediction probability: ', predictionProbability)
+    if (predictionProbability < 0.45):
+        return None
+
+    label = modelEncoder.inverse_transform([encodedLabel])[0]
+    return label
 
 if __name__ == '__main__':
 
-    # createDataSet(0.4, 0.25)
-    X_train, X_test, y_train, y_test, encoder = getTrainAndTestData(0.1)
-    clf = getTrainedSvmModel(X_train, y_train)
-    y_pred = clf.predict(X_test)
-    print(y_pred)
+    if ('-c' in sys.argv):
+        if (len(sys.argv) != 3):
+            print("Usage: ml.py -c <SECONDS_TO_CROP_FROM_PEAK>")
+            sys.exit()
+
+        createDataSet(float(sys.argv[2]))
+        sys.exit()
+
+    X_train, X_test, y_train, y_test, encoder, scaler = getTrainAndTestData(0.1)
+    clf = getTrainedModel(X_train, y_train)
+    y_pred = clf.predict_proba(X_test)
+    results = []
+    for i in range(len(y_pred)):
+        actual = np.argmax(y_pred[i])
+        expected = y_test[i]
+        results.append(actual == expected)
+    print(np.argmax(y_pred, axis=1))
     print(y_test)
-    # if (len(sys.argv) != 3):
-    #     print("Usage: ml.py <FOLDER1> <FOLDER2>")
-    #     sys.exit()
-
-
-
-# Uncomment ant place the below code in the extractFeaturesFromFile function to see the features visualized
-# Computing the time variable for visualization
-# frames = range(len(spectral_centroid))
-# t = librosa.frames_to_time(frames)
-# def normalize(cropped, axis=0):
-#     return sklearn.preprocessing.minmax_scale(cropped, axis=axis)
-#
-# # Plot audio waveform
-# librosa.display.waveplot(cropped, sr=sampleRate, alpha=0.4)
-#
-# # Plot the Spectral Rolloff
-# plt.plot(t, normalize(spectral_rolloff), color='r')
-#
-# # Plot the Spectral Centroid
-# plt.plot(t, normalize(spectral_centroid), color='g')
-#
-# plt.show()
-#
-#
-# # display MFCC — Mel-Frequency Cepstral Coefficients
-# librosa.display.specshow(mfccs, sr=sampleRate, x_axis='time')
-# plt.show()
+    print(float(sum(results))/float(len(y_test)))
+    sys.exit()
