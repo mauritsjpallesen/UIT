@@ -5,6 +5,7 @@ import numpy as np
 import os
 
 import threading
+import hashlib
 
 from kivy.clock import Clock, mainthread
 from kivy.metrics import dp
@@ -24,12 +25,47 @@ from featureExtraction import extractFeaturesFromFile
 from ml import getTrainAndTestData, getTrainedModel, predict
 # from deepLearning import getTrainAndTestData, getTrainedModel
 
-from pitchDetection import getAverageFrequency
 
 import sounddevice as sd
 from scipy.io.wavfile import write
 
 Builder.load_file('uit.kv')
+Builder.load_file('login.kv')
+
+class Login(Screen):
+    def __init__(self, **kwargs):
+        super(Login, self).__init__(**kwargs)
+
+        self.filePath = ""
+        X_train, X_test, y_train, y_test, encoder, scaler = getTrainAndTestData(0.01)
+        model = getTrainedModel(X_train, y_train)
+        self.model = model
+        self.modelEncoder = encoder
+        self.modelScaler = scaler
+        self.local_storage = {
+        "mau" : ['66d6fa803037211d7c0e40499f951c057a5c0329e4dfe528d8fa824bbca17624', '89d99fc4d6310c40934255843889c641797eb4e3a3f3cf659e06bef528161f13'],
+        "anders" : ['17b86905af72dd8265d38535c56c7c91502cfeb6586d3df0dc3e78392ff82ecb', 'df1d29b186fac0f8d3b2169068c535965c1df85ce27c47420821111d1ed2b357'],
+        "nathalia" : ['fc6127479cd0c90e7781e37ebb1d9b496664cd195319cc1c4c52d4f79ba08fab', '1939be098a57888bb5b8647842c2873e9527724cd29e39ae621f7106ff2a6b0e'],
+        "mads" : ['cd484bbf277ebd0c0be0ce0690fee09a0e32f1f8add111c9636a7fc720017762', '256eac32fa3df1cf17aefb6533dfd06d20c86508f423cd87e5d88b10445b2c92']}
+
+        #mau = erdetmindreng + ear
+        #anders = lau + trunk
+        #nathalia = krøigaard + backleg
+        #mads = møn + upperbody
+
+    def login(self, username, password):
+        prediction = predict(self.model, self.modelScaler, self.modelEncoder, self.filePath)
+
+        if self.local_storage[str(username)] == [hashlib.blake2s(password.encode()).hexdigest(), hashlib.blake2s(prediction.lower().encode()).hexdigest()]:
+            self.manager.transition = SlideTransition(direction="left")
+            self.manager.current = self.manager.next()
+        else:
+            dialog = MDDialog(title='Authentication failed',
+              text='Please try again')
+            dialog.open()
+
+    def set_path(self, path):
+        self.filePath = path
 
 class Uit(Screen):
 
@@ -74,21 +110,6 @@ class Uit(Screen):
     def set_path(self, path):
         self.filePath = path
 
-    def files(self):
-        path = './audio'  # path to the directory that will be opened in the file manager
-        file_manager = MDFileManager(
-            exit_manager=self.exit_manager,  # function called when the user reaches directory tree root
-            select_path=self.select_path,  # function called when selecting a file/directory
-        )
-        file_manager.show(path)
-
-    def select_path(self, path):
-        self.filePath = path
-
-    def exit_manager(self, *args):
-        self.manager_open = False
-        self.file_manager.close()
-
     def predict(self):
         if self.filePath == "":
             dialog = MDDialog(title='No file',
@@ -107,7 +128,9 @@ class MyApp(MDApp):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
         Window.bind(on_keyboard=self.events)
+        self.sm = ScreenManager()
         self.instance = Uit(name="Uit")
+        self.login = Login(name="Login")
         self.manager_open = False
         self.file_manager = MDFileManager(
             exit_manager=self.exit_manager,
@@ -121,7 +144,7 @@ class MyApp(MDApp):
         self.manager_open = True
 
     def select_path(self, path):
-        self.instance.set_path(path)
+        self.sm.current_screen.set_path(path)
         self.manager_open = False
         self.file_manager.close()
 
@@ -141,7 +164,7 @@ class MyApp(MDApp):
         self.theme_cls.primary_palette = "Blue"
         self.theme_cls.primary_hue = "800"
 
-        self.sm = ScreenManager()
+        self.sm.add_widget(self.login)
         self.sm.add_widget(self.instance)
         return self.sm
 
