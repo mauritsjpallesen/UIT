@@ -1,0 +1,75 @@
+<Login>:
+    BoxLayout:
+        id: login_layout
+        orientation: 'vertical'
+        padding: [10,50,10,50]
+        spacing: 50
+
+        # Label:
+        #     text: 'Welcome'
+        #     font_size: 32
+        Image:
+            source: 'ele.png'
+            size_hint: .7, .7
+            pos_hint: {"center_x":.5}
+            allow_stretch: True
+
+        MDTextFieldRound:
+            hint_text: 'Username'
+            id: login
+            multiline:False
+            font_size: "16sp" #36
+            # mode: "rectangle"
+            icon_left: 'account'
+            halign: 'center'
+            normal_color: 0,0,0,0
+            # color_active: .5, .5, 1, .22
+            required: True
+            size_hint: .4, .2
+            pos_hint: {"center_x":.5}
+
+        MDTextFieldRound:
+            hint_text: 'Password'
+            id: password
+            multiline:False
+            password:True
+            font_size: "16sp" #36
+            icon_left: 'key-variant'
+            halign: 'center'
+            normal_color: 0,0,0,0
+            required: True
+            size_hint: .4, .2
+            pos_hint: {"center_x":.5}
+
+        MDFloatingActionButton:
+            # text: "Next"
+            # font_size: 32
+            icon: "record-rec"
+            user_font_size: "32sp"
+            md_bg_color: app.theme_cls.primary_color
+            text_color: 1, 1, 1, 1
+            # size_hint: .2, .2
+            pos_hint: {"center_x":.5}
+            on_press: root.record()
+
+        # MDFloatingActionButton:
+        #     # text: "Next"
+        #     # font_size: 32
+        #     icon: "folder-open"
+        #     user_font_size: "32sp"
+        #     md_bg_color: app.theme_cls.primary_color
+        #     text_color: 1, 1, 1, 1
+        #     # size_hint: .2, .2
+        #     pos_hint: {"center_x":.5}
+        #     on_press: app.file_manager_open()
+
+        MDFloatingActionButton:
+            # text: "Next"
+            # font_size: 32
+            icon: "shield-lock-outline"
+            user_font_size: "32sp"
+            md_bg_color: app.theme_cls.primary_color
+            text_color: 1, 1, 1, 1
+            # size_hint: .2, .2
+            pos_hint: {"center_x":.5}
+            on_press: root.login(login.text, password.text)

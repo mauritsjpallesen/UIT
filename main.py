@@ -19,11 +19,12 @@ from kivymd.uix.slider import MDSlider
 from kivymd.uix.filemanager import MDFileManager
 from kivy.core.window import Window
 from kivymd.uix.spinner import MDSpinner
+from kivymd.uix.progressbar import MDProgressBar
 
 from featureExtraction import extractFeaturesFromFile
 
 from ml import getTrainAndTestData, getTrainedModel, predict
-# from deepLearning import getTrainAndTestData, getTrainedModel
+
 
 
 import sounddevice as sd
@@ -36,12 +37,10 @@ class Login(Screen):
     def __init__(self, **kwargs):
         super(Login, self).__init__(**kwargs)
 
+        self.progress = MDProgressBar(type = "determinate", running_duration = 4, catching_duration = 4.5, pos_hint = {"center_y":.3}, opacity = 0)
+        self.add_widget(self.progress)
+
         self.filePath = ""
-        X_train, X_test, y_train, y_test, encoder, scaler = getTrainAndTestData(0.01)
-        model = getTrainedModel(X_train, y_train)
-        self.model = model
-        self.modelEncoder = encoder
-        self.modelScaler = scaler
         self.local_storage = {
         "mau" : ['66d6fa803037211d7c0e40499f951c057a5c0329e4dfe528d8fa824bbca17624', '89d99fc4d6310c40934255843889c641797eb4e3a3f3cf659e06bef528161f13'],
         "anders" : ['17b86905af72dd8265d38535c56c7c91502cfeb6586d3df0dc3e78392ff82ecb', 'df1d29b186fac0f8d3b2169068c535965c1df85ce27c47420821111d1ed2b357'],
@@ -54,15 +53,50 @@ class Login(Screen):
         #mads = møn + upperbody
 
     def login(self, username, password):
-        prediction = predict(self.model, self.modelScaler, self.modelEncoder, self.filePath)
 
-        if self.local_storage[str(username)] == [hashlib.blake2s(password.encode()).hexdigest(), hashlib.blake2s(prediction.lower().encode()).hexdigest()]:
-            self.manager.transition = SlideTransition(direction="left")
-            self.manager.current = self.manager.next()
-        else:
+        try:
+            if self.filePath != './audio/auth.wav':
+                dialog = MDDialog(title='No recording',
+                  text='Please try again')
+                dialog.open()
+            else:
+                app = MDApp.get_running_app()
+                prediction = predict(app.model, app.scaler, app.encoder, self.filePath)
+                print(prediction)
+                if self.local_storage[str(username)] == [hashlib.blake2s(password.encode()).hexdigest(), hashlib.blake2s(prediction.lower().encode()).hexdigest()]:
+                    self.manager.transition = SlideTransition(direction="left")
+                    self.manager.current = self.manager.next()
+                else:
+                    dialog = MDDialog(title='Authentication failed',
+                      text='Please try again')
+                    dialog.open()
+        except Exception as e:
             dialog = MDDialog(title='Authentication failed',
               text='Please try again')
+            print(e)
             dialog.open()
+
+    def record(self):
+        t = threading.Thread(target = self.do_record, daemon=True)
+        t.start()
+        self.progress.opacity = 1
+        self.progress.start()
+
+    def do_record(self):
+        print("NU!")
+        fs = 44100
+        seconds = 3
+        self.filePath = './audio/' + 'auth' + '.wav'
+        recording = sd.rec(int(seconds * fs), samplerate=fs, channels=2)
+        sd.wait()
+        write(self.filePath, fs, recording)
+        self.done()
+
+    @mainthread
+    def done(self):
+        self.progress.stop()
+        self.progress.opacity = 0
+
 
     def set_path(self, path):
         self.filePath = path
@@ -71,12 +105,6 @@ class Uit(Screen):
 
     def __init__(self, **kwargs):
         super(Uit, self).__init__(**kwargs)
-
-        X_train, X_test, y_train, y_test, encoder, scaler = getTrainAndTestData(0.01)
-        model = getTrainedModel(X_train, y_train)
-        self.model = model
-        self.modelEncoder = encoder
-        self.modelScaler = scaler
 
         self.spinner = MDSpinner(
             size_hint=(None, None),
@@ -93,8 +121,8 @@ class Uit(Screen):
         self.add_widget(self.spinner)
         self.filePath = ""
         self.threshhold = 0
-        self.avgFreq = 0
-        self.modelEndpoint = "https://max-audio-classifier.codait-prod-41208c73af8fca213512856c7a09db52-0000.us-east.containers.appdomain.cloud/model/predict"
+        #self.avgFreq = 0
+        #self.modelEndpoint = "https://max-audio-classifier.codait-prod-41208c73af8fca213512856c7a09db52-0000.us-east.containers.appdomain.cloud/model/predict"
 
     def record(self, filename):
         fs = 44100
@@ -116,7 +144,8 @@ class Uit(Screen):
               text='Please record first')
             dialog.open()
         else:
-            predictionLabel = predict(self.model, self.modelScaler, self.modelEncoder, self.filePath)
+            app = App.get_running_app()
+            predictionLabel = predict(app.model, app.scaler, app.encoder, self.filePath)
             if (predictionLabel == None):
                 MDDialog(title='Unable to find sound').open()
                 return
@@ -137,6 +166,8 @@ class MyApp(MDApp):
             select_path=self.select_path,
             ext = ['.wav']
         )
+
+        self.model, self.encoder, self.scaler, _ = getTrainedModel()
 
     def file_manager_open(self):
         cwd = os.getcwd()

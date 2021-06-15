@@ -13,7 +13,7 @@ import pandas as pd
 from sklearn import svm
 from featureExtraction import extractFeaturesFromFile
 
-def createDataSet(seconds):
+def createDataSet(seconds, dir):
     file = open('data.csv', 'w', newline='')
 
     header = 'filename zero_crossing_rate spectral_centroid spectral_rolloff spectral_bandwidth chroma_stft rms'
@@ -30,7 +30,14 @@ def createDataSet(seconds):
     # surfaces = 'smallBox bigBox metal mousePad woodenTable'.split()
     surfaces = 'backLeg frontLeg ear trunk upperBody'.split()
     for s in surfaces:
-        directory = f'./audio/elephant/{s}/'
+        if dir == 'mau':
+            directory = f'./audio/elephant/mau/{s}/'
+        elif dir == 'mac':
+            directory = f'./audio/elephant/mac/{s}/'
+        elif dir == 'all':
+            directory = f'./audio/elephant/all/{s}/'
+        else:
+            directory = f'./audio/elephant/samson/{s}/'
         for filename in os.listdir(directory):
             filePath = directory + filename
             features = extractFeaturesFromFile(filePath, seconds)
