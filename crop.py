@@ -88,24 +88,23 @@ def plot_all_audios_in_folder(folderPath, threshold, seconds):
 
     plt.show()
 
-def plot_all_audios_in_folders(directoryPaths, threshold, seconds):
+def plot_all_audios_in_folders(directoryPaths, seconds):
 
-    fig, axs = plt.subplots(2, 2)
-    fig.suptitle('Trigger on various surfaces')
+    fig, axs = plt.subplots(4)
+    fig.suptitle('Trigger on different parts of hollow 3D printed elephant')
     # y label: normalized amplitude
 
     for ax in axs.flat:
         ax.set(ylabel='Normalized amplitude')
 
-    for row in range(len(axs)):
-        for col in range(len(axs[row])):
-            dir = directoryPaths.pop()
-            files = os.listdir(dir)
-            for f in files:
-                data, rate = librosa.load(dir + f, sr=44100)
-                cropped = crop_seconds_from_threshold(data, rate, threshold, seconds)
-                axs[row, col].set_title(camelCaseToPlotTitle(dir))
-                librosa.display.waveplot(cropped, sr=rate, alpha=0.5, ax=axs[row, col])
+    for pax in axs:
+        dir = directoryPaths.pop()
+        files = os.listdir(dir)
+        for f in files:
+            data, rate = librosa.load(dir + f, sr=44100)
+            cropped = crop_seconds_from_peak(data, rate, seconds)
+            pax.set_title(camelCaseToPlotTitle(dir))
+            librosa.display.waveplot(cropped, sr=rate, alpha=0.5, ax=pax)
 
     for ax in axs.flat:
         ax.label_outer()
@@ -125,7 +124,7 @@ def wavDataIsStereo(data):
 if __name__ == '__main__':
 
     if (sys.argv[1] == '-plot'):
-        plot_all_audios_in_folders(['./audio/bigBox/', './audio/smallBox/', './audio/mousePad/', './audio/woodenTable/'], float(sys.argv[2]), float(sys.argv[3]))
+        plot_all_audios_in_folders(['./audio/woodenTable/', './audio/mousePad/', './audio/smallBox/', './audio/bigBox/'], float(sys.argv[2]))
         sys.exit();
 
     if (len(sys.argv) < 3):

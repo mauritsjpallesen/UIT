@@ -47,6 +47,17 @@ def predict(model, modelScaler, modelEncoder, filePath):
     label = modelEncoder.inverse_transform([encodedLabel])[0]
     return label
 
+def getAccuracy():
+    X_train, X_test, y_train, y_test, encoder, scaler = getTrainAndTestData(0.3)
+    clf = getTrainedModel(X_train, y_train)
+    y_pred = clf.predict_proba(X_test)
+    results = []
+    for i in range(len(y_pred)):
+        actual = np.argmax(y_pred[i])
+        expected = y_test[i]
+        results.append(actual == expected)
+    return float(sum(results)) / float(len(y_test))
+
 if __name__ == '__main__':
 
     if ('-c' in sys.argv):
@@ -57,15 +68,21 @@ if __name__ == '__main__':
         createDataSet(float(sys.argv[2]))
         sys.exit()
 
-    X_train, X_test, y_train, y_test, encoder, scaler = getTrainAndTestData(0.1)
-    clf = getTrainedModel(X_train, y_train)
-    y_pred = clf.predict_proba(X_test)
-    results = []
-    for i in range(len(y_pred)):
-        actual = np.argmax(y_pred[i])
-        expected = y_test[i]
-        results.append(actual == expected)
-    print(np.argmax(y_pred, axis=1))
-    print(y_test)
-    print(float(sum(results))/float(len(y_test)))
+    if ('-acc' in sys.argv):
+        if (len(sys.argv) != 3):
+            print("Usage: ml.py -acc <ITERATIONS>")
+            sys.exit()
+
+        iterations = int(sys.argv[2])
+        accuracies = []
+        for i in range(iterations):
+            accuracy = getAccuracy()
+            accuracies.append(accuracy)
+        averageAccuracy = sum(accuracies)/len(accuracies)
+        print(averageAccuracy)
+        sys.exit()
+
+
+    accuracy = getAccuracy()
+    print(accuracy)
     sys.exit()
